@@ -24,7 +24,7 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/Resembli/ui/edit/main/docs/",
+          editUrl: "https://github.com/Resembli/website/edit/main/docs/",
         },
         blog: false,
         theme: {
