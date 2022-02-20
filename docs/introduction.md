@@ -24,5 +24,4 @@ Any package with a version `1.0.0` or greater can be considered production ready
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------ |
 | [@resembli/react-virtualized-window](./react-virtualized-window/index.mdx) | React virtualization library for rendering massive lists or tables                                        | Beta               |
 | @resembli/ui                                                               | A set of React components to quickly build nice looking UIs that conform to a user provided design system | Early design phase |
-| @resembli/utils                                                            | A set of front-end utilities functions not tied to any specific framework or platform                     | In progress        |
 | @resembli/hooks                                                            | Useful React hooks for different use cases                                                                | Early design phase |
