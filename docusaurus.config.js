@@ -26,7 +26,11 @@ const config = {
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: "https://github.com/Resembli/website/edit/main/docs/",
         },
-        blog: false,
+        blog: {
+          blogTitle: "Resembli Blog",
+          blogDescription: "The Resembli organization blog",
+          postsPerPage: "ALL",
+        },
         theme: {
           customCss: require.resolve("./src/css/main.css"),
         },
@@ -55,6 +59,7 @@ const config = {
             position: "left",
             label: "Documentation",
           },
+          { to: "blog", label: "Blog", position: "left" },
           {
             href: "https://github.com/Resembli/ui",
             label: "GitHub",
