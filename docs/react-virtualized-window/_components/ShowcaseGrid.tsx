@@ -9,15 +9,24 @@ const data = Array.from({ length: 1000 }, (_, row) => {
   })
 })
 
-const CellItem: RenderItem<number[]> = ({ data, style, cellMeta: { row, column } }) => {
+const CellItem: RenderItem<number[]> = ({
+  data,
+  style,
+  cellMeta: { row, column, pinnedRow, pinnedColumn },
+}) => {
+  let background = (row + column) % 2 === 1 ? "#f8f8f0" : "white"
+
+  if (pinnedRow === "top") background = "#839073"
+  if (pinnedColumn === "left") background = "#4E4A59"
+
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: (row + column) % 2 === 1 ? "#f8f8f0" : "white",
-        color: "black",
+        background,
+        color: pinnedColumn || pinnedRow ? "rgb(30, 255, 0)" : "black",
         ...style,
       }}
     >
@@ -36,8 +45,9 @@ export function ShowcaseGrid() {
             height={600}
             defaultRowHeight={width < 800 ? 120 : 60}
             defaultColumnWidth={width < 800 ? 120 : 60}
+            pinnedTopCount={1}
+            pinnedLeftCount={1}
             data={data}
-            style={{ border: "1px solid grey", background: "white" }}
           >
             {CellItem}
           </Grid>

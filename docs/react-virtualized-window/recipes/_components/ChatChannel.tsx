@@ -15,7 +15,6 @@ export function ChatChannel() {
       data={chatData}
       defaultSize={100}
       sizes={sizes}
-      gap={10}
       style={{ border: "1px solid grey" }}
     >
       {({ data, style }) => {

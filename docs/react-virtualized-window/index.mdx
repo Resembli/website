@@ -4,13 +4,7 @@ title: React Virtualized Window
 
 ## What is a virtualized window?
 
-A virtualized window is a React component for creating views on data where only the data items visible to the user are rendered.
-
-For example, imagine you had an autocomplete dropdown that could potentially have 1000s of choices. Rendering 1000s of `div`
-elements in the browser can become a performance bottleneck. Furthermore it's uncessary, since at any given time only a handful of the
-items will be visible to the user.
-
-`@resembli/react-virtualized-window` provides components that solve this problem by rendering only what is visible to the user into the DOM.
+`@resembli/react-virtualized-window` provides components that render only what is visible to the user into the DOM.
 This keeps your website responsive and performant. The `Grid` below has 100,000 cells, but only the cells visible to the user
 are actually present in the DOM.
 
@@ -28,15 +22,24 @@ const data = Array.from({ length: 1000 }, (_, row) => {
   })
 })
 
-const CellItem: RenderItem<number[]> = ({ data, style, cellMeta: { row, column } }) => {
+const CellItem: RenderItem<number[]> = ({
+  data,
+  style,
+  cellMeta: { row, column, pinnedRow, pinnedColumn },
+}) => {
+  let background = (row + column) % 2 === 1 ? "#f8f8f0" : "white"
+
+  if (pinnedRow === "top") background = "#839073"
+  if (pinnedColumn === "left") background = "#4E4A59"
+
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: (row + column) % 2 === 1 ? "#f8f8f0" : "white",
-        color: "black",
+        background,
+        color: pinnedColumn || pinnedRow ? "rgb(30, 255, 0)" : "black",
         ...style,
       }}
     >
@@ -47,15 +50,23 @@ const CellItem: RenderItem<number[]> = ({ data, style, cellMeta: { row, column }
 
 export function ShowcaseGrid() {
   return (
-    <Grid
-      height={400}
-      defaultRowHeight={60}
-      defaultColumnWidth={60}
-      data={data}
-      style={{ border: "1px solid grey" }}
-    >
-      {CellItem}
-    </Grid>
+    <BrowserOnly>
+      {() => {
+        const width = globalThis.innerWidth ?? 1280
+        return (
+          <Grid
+            height={600}
+            defaultRowHeight={width < 800 ? 120 : 60}
+            defaultColumnWidth={width < 800 ? 120 : 60}
+            pinnedTopCount={1}
+            pinnedLeftCount={1}
+            data={data}
+          >
+            {CellItem}
+          </Grid>
+        )
+      }}
+    </BrowserOnly>
   )
 }
 ```
@@ -66,7 +77,7 @@ Some of the common features supported are:
 
 - Row virtualization
 - Column virtualization
-- RTL direction fully supported
+- Row and column pinning
 - React 18 concurrent mode ready
 - TypeScript typings
 - Variable width and height data items

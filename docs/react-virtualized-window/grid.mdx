@@ -122,10 +122,20 @@ export function BasicGridExample() {
 | `apiRef`        | `MutableRefObject`        | A `ref` object to capture the window api for imperative actions.                                             |
 | `className`     | `string`                  | ClassName to apply to containing window `div`.                                                               |
 | `style`         | `CSSProperties`           | CSSProperties style object.                                                                                  |
-| `gap`           | `ItemGap`                 | The vertical and horizontal gap to apply to items.                                                           |
 | `disableSticky` | `boolean`                 | Disables the sticky `div` handling, which means content may flash in when the user scrolls quickly.          |
-| `rtl`           | `boolean`                 | Use `rtl` direction for item content.                                                                        |
 | `onScroll`      | `UIEventHandler`          | User provided onScroll callback.                                                                             |
 | `width`         | `CSSProperties['Width']`  | Width value to use for sizing the component.                                                                 |
 | `height`        | `CSSProperties['Height']` | Height value to use for sizing the component.                                                                |
 | `data-testid`   | `string`                  | A string for finding the window when testing.                                                                |
+
+### Row and Column Pinning Props
+
+You can specify any of the following props:
+
+- `pinnedTopCount`: the number of rows to pin at the top of the grid
+- `pinnedBottomCount`: the number of rows to pin at the bottom of the grid
+- `pinnedLeftCount`: the number of columns to pin left of the grid
+- `pinnedRightCount`: the number of columns to pint right of the grid
+
+Pinned rows will use the the items from the beginning of the `data` array provided, starting with `pinnedTopCount`, then `pinnedBottomCount`.
+Pinned columns will use the items from the beginning of the individual data items from the `data` array provided, starting with `pinnedLeftCount`, then `pinnedRightCount`
