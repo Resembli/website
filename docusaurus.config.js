@@ -47,6 +47,13 @@ const config = {
         indexName: "le-ui",
       },
       defaultMode: "dark",
+      announcementBar: {
+        id: "Support Us",
+        content:
+          'Want to support us? Consider giving us a &#9733 on <a target="_blank" rel="noopener noreferrer" href="https://github.com/Resembli/ui">Github</a>',
+        textColor: "#1eff00",
+        backgroundColor: "#18191a",
+      },
       navbar: {
         title: "Resembli UI",
         logo: {
