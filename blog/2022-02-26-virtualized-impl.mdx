@@ -44,20 +44,20 @@ things simple.
 To virtualize a DOM view we need to know a few pieces of information:
 
 - The dimensions of the container where the items will be rendered
-- The total height and width needed to render all the items in the container (i.e. how much space would be needed if we didn't virtualize the view)
+- The total height needed to render all the items in the container (i.e. how much space would be needed if we didn't virtualize the view)
 - The dimensions of the individual items
 
 The container dimensions are simply enough, for example, if you have the following:
 
 ```jsx
-<div style={{ width: 500, height: 500 }}></div>
+<div style={{ height: 500 }}></div>
 ```
 
-Then your container dimensions have a height of `500px` and a width of `500px`. Straightforward enough.
+Then your container dimensions have a height of `500px`. Straightforward enough.
 
-Now we need to compute the total height and width needed if we wanted to render every single item in our
+Now we need to compute the total height needed if we wanted to render every single item in our
 window. For example, if we have a list of 1000 items, and each item takes `20px` height, then the total height
-is `20,000px`. We can do the same for `width`.
+is `20,000px`.
 
 Once we know the dimensions of our container, and the total space we need, we can create a window. How? Using some styles
 
@@ -73,7 +73,7 @@ export function EmptyWindow() {
 
 <EmptyWindow />
 
-Notice we have created a window with enough space to hold `20000px` of content. But now we need to know
+Notice we have created a window with enough space to hold `20000px` of content. Now we need to know
 how to position items within our window. This entails knowing two pieces of information:
 
 - Our current scroll offset from the top
@@ -82,14 +82,14 @@ how to position items within our window. This entails knowing two pieces of info
 We can actually just work this out using simple math. For example,
 
 - Assume we have a list of 2000 items
-- We know the scroll offset from the top is `2000px`
+- Assume we know the scroll offset from the top is `2000px`
 - Each item takes up `20px` of height
 - Our window can hold upto `250px` of height
 
 Then our first item in view will be `2000 / 20 === 100`, and the last item in view is `250 / 20 + 100 === 112.5`, we round
 up, so call it `113`. So our start index would be `100` and our end index will be `113`. Instead of rendering all `2000` items,
-we render only `13`. There is one small edge case to consider, we are rendering exactly what the window can contain. If the
-user scrolls a little, let say `10px`, it means one item will only be half in view, leaving a little space at the bottom where
+we render only `13`. There is one small edge case to consider. We are rendering exactly what the window can contain. If the
+user scrolls down a little, let say `10px`, it means one item will only be half in view, leaving a little space at the bottom where
 the background of our window will show through. See the diagram below:
 
 ![diagram showing window off a bit](/a-little-off.jpg)
@@ -188,7 +188,7 @@ content down. I call this the _offset_ `div`. Briefly:
 
 Okay but what is `runningHeight` then? It is the height of the number of items above our starting item. For example,
 if our starting index is `100`, then `runningHeight` is the height of the items from `0` to `99`. Instead of
-individual items we render a single large `div` with the height of all the individual items combined. That's it!
+the individual items, we render a single large `div` with the height of all the individual items combined. That's it!
 
 Check out the full working example below.
 
@@ -257,8 +257,8 @@ export function VirtualizedWindow() {
 
 The `@resembli/react-virtualized-window` uses a `div` that grows in size to move items into position
 as the user scrolls. Other virtualization libraries use `transform` or `position`. Any of these approaches
-work. The advantage of using a `div` is that we can utilize the browsers normal capabilities for laying out
-items, instead of individually positioning each item.
+work. The advantage of using a `div` is that we can utilize the browser's normal capabilities for laying out
+items, instead of individually positioning each item ourselves.
 
 :::
 
@@ -546,7 +546,7 @@ export function VirtualizedWindowSticky() {
 
 We are essentially making scrolling a synchronous operation (strictly speaking this isn't what's happening but the effect is the same).
 So the biggest drawback is janky scrolling. If your application can't run at 60fps, or the device running your application is not
-powerful enough things may not be as smooth as they could without the `sticky` positioning. Furthermore, `sticky` positioning as a few
+powerful enough things may not be as smooth as they could without the `sticky` positioning. Furthermore, `sticky` positioning has a few
 quirks in older browsers, and isn't supports at all by IE11.
 
 With that said, you can actually disable the `sticky` position on the fly. You need to do two things for this:
