@@ -1,0 +1,555 @@
+---
+title: react-virtualized-window implementation
+description: A high level overview of how the react-virtualized-window works
+slug: react-virtualized-window-implementation
+authors: lee
+---
+
+import {
+  EmptyWindow,
+  OffsetAdjustedWindow,
+  StickyExample,
+  VirtualizedWindow,
+  VirtualizedWindowSticky,
+  VirtualizedWindowStickyBroken,
+  VirtualizedWindowStickyBroken2,
+} from "./_components/VirtualizedImplComponents.js"
+
+:::note
+
+The article below details a simplified version of the virtualization implementation used by
+[`@resembli/react-virtualized-window`](http://localhost:3000/docs/react-virtualized-window/). If you found
+it useful, consider giving our main repo a star: [Resembli MonoRepo](https://github.com/Resembli/ui).
+
+:::
+
+## What is [`@resembli/react-virtualized-window`](http://localhost:3000/docs/react-virtualized-window/)
+
+The `react-virtualized-window` is a React component that creates virtualized DOM views. A virtualized DOM view
+only renders DOM elements that are visible to the user within a container (with a little buffer out of view).
+DOM virtualization is a necessary performance optimization when a large number of elements need to be
+rendered into the browser, but only a small portion of them are visible at any given moment.
+Good examples are long lists, or data heavy tables.
+
+## Diving straight into the implementation
+
+:::caution
+
+The implementation described below is a simplified version of how the `react-virtualized-window`
+works. In particular the focus is on vertical virtualization and fixed sized items, just to keep
+things simple.
+
+:::
+
+To virtualize a DOM view we need to know a few pieces of information:
+
+- The dimensions of the container where the items will be rendered
+- The total height and width needed to render all the items in the container (i.e. how much space would be needed if we didn't virtualize the view)
+- The dimensions of the individual items
+
+The container dimensions are simply enough, for example, if you have the following:
+
+```jsx
+<div style={{ width: 500, height: 500 }}></div>
+```
+
+Then your container dimensions have a height of `500px` and a width of `500px`. Straightforward enough.
+
+Now we need to compute the total height and width needed if we wanted to render every single item in our
+window. For example, if we have a list of 1000 items, and each item takes `20px` height, then the total height
+is `20,000px`. We can do the same for `width`.
+
+Once we know the dimensions of our container, and the total space we need, we can create a window. How? Using some styles
+
+```jsx
+export function EmptyWindow() {
+  return (
+    <div style={{ height: 250, overflow: "auto" }}>
+      <div style={{ height: 20_000 }}></div>
+    </div>
+  )
+}
+```
+
+<EmptyWindow />
+
+Notice we have created a window with enough space to hold `20000px` of content. But now we need to know
+how to position items within our window. This entails knowing two pieces of information:
+
+- Our current scroll offset from the top
+- Which items we should render at that position
+
+We can actually just work this out using simple math. For example,
+
+- Assume we have a list of 2000 items
+- We know the scroll offset from the top is `2000px`
+- Each item takes up `20px` of height
+- Our window can hold upto `250px` of height
+
+Then our first item in view will be `2000 / 20 === 100`, and the last item in view is `250 / 20 + 100 === 112.5`, we round
+up, so call it `113`. So our start index would be `100` and our end index will be `113`. Instead of rendering all `2000` items,
+we render only `13`. There is one small edge case to consider, we are rendering exactly what the window can contain. If the
+user scrolls a little, let say `10px`, it means one item will only be half in view, leaving a little space at the bottom where
+the background of our window will show through. See the diagram below:
+
+![diagram showing window off a bit](/a-little-off.jpg)
+
+We can fix this by adding `1` to our end index, i.e. render one more item as a buffer, so we render `14` items instead of `13`.
+
+:::info
+
+The algorithm for determining our start and end indices is a little more complex when item sizes can vary. We are keeping things
+simple here. You can see the code for our approach
+[here](https://github.com/Resembli/ui/blob/main/packages/react-virtualized-window/src/useDimensionIndices.ts).
+
+:::
+
+Next we need to get the scroll offset. How? With an `onScroll` callback. An example with all of this in place is shown below:
+
+:::caution
+
+The example below is incomplete, hence may behave unexpectedly. This is a stop gap to the final implementation.
+
+:::
+
+<OffsetAdjustedWindow />
+
+<details><summary>Code</summary>
+<p>
+
+```jsx
+const ITEM_HEIGHT = 20
+const WINDOW_HEIGHT = 200
+
+export function OffsetAdjustedWindow() {
+  const [topOffset, setTopOffset] = useState(0)
+
+  const data = useMemo(() => {
+    return Array.from({ length: 1000 }, (_, i) => i)
+  }, [])
+
+  const startIndex = Math.floor(topOffset / ITEM_HEIGHT)
+  const endIndex = Math.ceil(WINDOW_HEIGHT / ITEM_HEIGHT + startIndex) + 1
+
+  return (
+    <div>
+      <code>Scroll Top Offset: {topOffset}</code>
+      <code>
+        Start Index: {startIndex}, End Index: {endIndex}
+      </code>
+      <div
+        style={{ height: WINDOW_HEIGHT, overflow: "auto" }}
+        onScroll={(e) => setTopOffset(e.currentTarget.scrollTop)}
+      >
+        <div style={{ height: 20_000 }}>
+          {data.slice(startIndex, endIndex).map((row, i) => {
+            return (
+              <div
+                style={{
+                  height: ITEM_HEIGHT,
+                  maxHeight: ITEM_HEIGHT,
+                  minHeight: ITEM_HEIGHT,
+                  display: "flex",
+                  border: "1px solid grey",
+                  boxSizing: "border-box",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                key={i + startIndex}
+              >
+                {row}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+</p>
+</details>
+
+Okay, so now we know what to render but it still doesn't quite work. We also need to position our items.
+If we have scrolled `2000px` down, then we need to shift our list items `2000px` down. How? We can create
+a `div` that is out of view from the user but grows in size as the user scrolls. This `div` will push our
+content down. I call this the _offset_ `div`. Briefly:
+
+```jsx
+<div style={{ height: 20_000 }}>
+  {/* highlight-next-line */}
+  <div style={{ height: runningHeight }} />
+  {data.slice(startIndex, endIndex).map((row, i) => {
+    // Our data items
+  })}
+</div>
+```
+
+Okay but what is `runningHeight` then? It is the height of the number of items above our starting item. For example,
+if our starting index is `100`, then `runningHeight` is the height of the items from `0` to `99`. Instead of
+individual items we render a single large `div` with the height of all the individual items combined. That's it!
+
+Check out the full working example below.
+
+<VirtualizedWindow />
+
+<details><summary>Code</summary>
+<p>
+
+```jsx
+export function VirtualizedWindow() {
+  const [topOffset, setTopOffset] = useState(0)
+
+  const data = useMemo(() => {
+    return Array.from({ length: 1000 }, (_, i) => i)
+  }, [])
+
+  const startIndex = Math.floor(topOffset / ITEM_HEIGHT)
+  const endIndex = Math.ceil(WINDOW_HEIGHT / ITEM_HEIGHT + startIndex) + 1
+
+  return (
+    <div>
+      <code>Scroll Top Offset: {topOffset}</code>
+      <code>
+        Start Index: {startIndex}, End Index: {endIndex}
+      </code>
+
+      <div
+        style={{
+          height: WINDOW_HEIGHT,
+          overflow: "auto",
+        }}
+        onScroll={(e) => setTopOffset(e.currentTarget.scrollTop)}
+      >
+        <div style={{ height: 20_000 }}>
+          <div style={{ height: ITEM_HEIGHT * startIndex }}></div>
+          {data.slice(startIndex, endIndex).map((row, i) => {
+            return (
+              <div
+                style={{
+                  height: ITEM_HEIGHT,
+                  minHeight: ITEM_HEIGHT,
+                  maxHeight: ITEM_HEIGHT,
+                  border: "1px solid grey",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                key={i + startIndex}
+              >
+                {row}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+</p>
+</details>
+
+:::info
+
+The `@resembli/react-virtualized-window` uses a `div` that grows in size to move items into position
+as the user scrolls. Other virtualization libraries use `transform` or `position`. Any of these approaches
+work. The advantage of using a `div` is that we can utilize the browsers normal capabilities for laying out
+items, instead of individually positioning each item.
+
+:::
+
+## Preventing Content Flashes
+
+All virtualization implementations result in content **flashing** in as the user scroll very quickly. The _tldr_ reason
+for this is that scolling in the browser happens on a separate thread, whilst all the content calculations and painting
+happens on the main thread. Hence whilst the main thread is busy, scrolling can still happen.
+This is [execellent article for those looking to understand more](https://blogs.windows.com/msedgedev/2017/03/08/scrolling-on-the-web/).
+
+With that said, the `@resembli/react-virtualized-window` components have a way to prevent content flashing in. For example, if we look at
+`react-window` vs `@resembli/react-virtualized-window`:
+
+- `react-window`:
+
+  ![react window grid example](/react-window-opt.gif)
+
+- `@resembli/react-virtualized-window`
+
+  ![react virtualized window grid example](/react-virtualized-opt.gif)
+
+:::info
+
+This is **NOT** a performance comparison, or even a comparison of `react-window` to `@resembli/react-virtualized-window`. This is a demonstration of
+the checkboarding effect present in other `virtualization` frameworks, which is not present in `@resembli/react-virtualized-window`
+(unless you disable the stick `div` using the `disableSticky` prop).
+
+And for those wondering, `react-window` and `@resembli/react-virtualized-window` are equally fast.
+:::
+
+The question is how does this work? The answer is by using a `div` with `position: "sticky"`. We essentially need to keep
+a `<div>` in view, even as the browser scrolls. For example:
+
+<StickyExample />
+
+<details><summary>Code</summary>
+<p>
+
+```jsx
+export function StickyExample() {
+  return (
+    <div>
+      <div
+        style={{
+          height: WINDOW_HEIGHT,
+          overflow: "auto",
+          border: "1px solid grey",
+        }}
+      >
+        <div style={{ height: 20_000 }}>
+          {/* highlight-next-line */}
+          <div style={{ position: "sticky", top: 0, left: 0 }}>
+            <div style={{ height: 200, width: 200, background: "red" }}></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+</p>
+</details>
+
+Notice that the red box, always remains in the top left corner of the container. Regardless of the scroll position.
+If we replace the red box with our virtualized items, we get the following:
+
+<VirtualizedWindowStickyBroken />
+
+<details><summary>Code</summary>
+<p>
+
+```jsx
+export function VirtualizedWindowStickyBroken() {
+  const [topOffset, setTopOffset] = useState(0)
+
+  const data = useMemo(() => {
+    return Array.from({ length: 1000 }, (_, i) => i)
+  }, [])
+
+  const startIndex = Math.floor(topOffset / ITEM_HEIGHT)
+  const endIndex = Math.ceil(WINDOW_HEIGHT / ITEM_HEIGHT + startIndex) + 1
+
+  return (
+    <div>
+      <code>Scroll Top Offset: {topOffset}</code>
+      <code>
+        Start Index: {startIndex}, End Index: {endIndex}
+      </code>
+
+      <div
+        style={{
+          height: WINDOW_HEIGHT,
+          overflow: "auto",
+        }}
+        onScroll={(e) => setTopOffset(e.currentTarget.scrollTop)}
+      >
+        <div style={{ height: 20_000 }}>
+          <div style={{ position: "sticky", top: 0, left: 0 }}>
+            {/* highlight-start */}
+            <div style={{ height: ITEM_HEIGHT * startIndex }}></div>
+            {data.slice(startIndex, endIndex).map((row, i) => {
+              return (
+                <div
+                  style={{
+                    height: ITEM_HEIGHT,
+                    minHeight: ITEM_HEIGHT,
+                    maxHeight: ITEM_HEIGHT,
+                    border: "1px solid grey",
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  key={i + startIndex}
+                >
+                  {row}
+                </div>
+              )
+            })}
+            {/* highlight-end */}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+</p>
+</details>
+
+### Fixing scroll offset with sticky div
+
+This doesn't quite work! As we scroll, the offset `div` that grows to push our items down will now be in view. So what can
+we do? Simple, translate our entire container in the opposite direction our offset `div` grows in. This is as simple as applying
+`transform: translate3d(0px, ${-topOffset}px, px)` to a div the wraps all our items. See this in action below:
+
+<VirtualizedWindowStickyBroken2 />
+
+<details><summary>Code</summary>
+<p>
+
+```jsx
+export function VirtualizedWindowStickyBroken2() {
+  const [topOffset, setTopOffset] = useState(0)
+
+  const data = useMemo(() => {
+    return Array.from({ length: 1000 }, (_, i) => i)
+  }, [])
+
+  const startIndex = Math.floor(topOffset / ITEM_HEIGHT)
+  const endIndex = Math.ceil(WINDOW_HEIGHT / ITEM_HEIGHT + startIndex) + 1
+
+  return (
+    <div>
+      <code>Scroll Top Offset: {topOffset}</code>
+      <code>
+        Start Index: {startIndex}, End Index: {endIndex}
+      </code>
+
+      <div
+        style={{
+          height: WINDOW_HEIGHT,
+          overflow: "auto",
+        }}
+        onScroll={(e) => setTopOffset(e.currentTarget.scrollTop)}
+      >
+        <div style={{ height: 20_000 }}>
+          <div style={{ position: "sticky", top: 0, left: 0 }}>
+            {/* highlight-next-line */}
+            <div style={{ transform: `translate3d(0px, ${-topOffset}px, 0px)` }}>
+              <div style={{ height: ITEM_HEIGHT * startIndex }}></div>
+              {data.slice(startIndex, endIndex).map((row, i) => {
+                return (
+                  <div
+                    style={{
+                      height: ITEM_HEIGHT,
+                      minHeight: ITEM_HEIGHT,
+                      maxHeight: ITEM_HEIGHT,
+                      border: "1px solid grey",
+                      boxSizing: "border-box",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    key={i + startIndex}
+                  >
+                    {row}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+</p>
+</details>
+
+### Fixing content disappearing at halfway mark
+
+The above example looks like it works, but there is one more issue. If you scroll past the halfway mark
+the content will disappear. I'll be honest, I am not quite sure why this is the case and I couldn't find
+anything about it on the Google. BUT, I do know what fixes the issue. By making the `div` that we are
+translating as we scroll have `position: "absolute"`. So the final working solution:
+
+<VirtualizedWindowSticky />
+
+<details><summary>Code</summary>
+<p>
+
+```jsx
+export function VirtualizedWindowSticky() {
+  const [topOffset, setTopOffset] = useState(0)
+
+  const data = useMemo(() => {
+    return Array.from({ length: 1000 }, (_, i) => i)
+  }, [])
+
+  const startIndex = Math.floor(topOffset / ITEM_HEIGHT)
+  const endIndex = Math.ceil(WINDOW_HEIGHT / ITEM_HEIGHT + startIndex) + 1
+
+  return (
+    <div>
+      <code>Scroll Top Offset: {topOffset}</code>
+      <code>
+        Start Index: {startIndex}, End Index: {endIndex}
+      </code>
+
+      <div
+        style={{
+          height: WINDOW_HEIGHT,
+          overflow: "auto",
+        }}
+        onScroll={(e) => setTopOffset(e.currentTarget.scrollTop)}
+      >
+        <div style={{ height: 20_000 }}>
+          <div style={{ position: "sticky", top: 0, left: 0 }}>
+            <div
+              style={{
+                position: "absolute",
+                width: "100%",
+                top: 0,
+                transform: `translate3d(0px, ${-topOffset}px, 0px)`,
+              }}
+            >
+              <div style={{ height: ITEM_HEIGHT * startIndex }}></div>
+              {data.slice(startIndex, endIndex).map((row, i) => {
+                return (
+                  <div
+                    style={{
+                      height: ITEM_HEIGHT,
+                      minHeight: ITEM_HEIGHT,
+                      maxHeight: ITEM_HEIGHT,
+                      border: "1px solid grey",
+                      boxSizing: "border-box",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    key={i + startIndex}
+                  >
+                    {row}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+</p>
+</details>
+
+### Drawbacks of using the position sticky div
+
+We are essentially making scrolling a synchronous operation (strictly speaking this isn't what's happening but the effect is the same).
+So the biggest drawback is janky scrolling. If your application can't run at 60fps, or the device running your application is not
+powerful enough things may not be as smooth as they could without the `sticky` positioning. Furthermore, `sticky` positioning as a few
+quirks in older browsers, and isn't supports at all by IE11.
+
+With that said, you can actually disable the `sticky` position on the fly. You need to do two things for this:
+
+- Conditionally render the `div` with `sticky` positioning
+- If `sticky` position is not being used, do not do any translation
