@@ -22,7 +22,7 @@ const data = Array.from({ length: 1000 }, (_, row) => {
   })
 })
 
-const CellItem: RenderItem<number[]> = ({
+const GridCell: RenderItem<number[]> = ({
   data,
   style,
   cellMeta: { row, column, pinnedRow, pinnedColumn },
@@ -48,25 +48,18 @@ const CellItem: RenderItem<number[]> = ({
   )
 }
 
-export function ShowcaseGrid() {
+export function BasicGridExample() {
   return (
-    <BrowserOnly>
-      {() => {
-        const width = globalThis.innerWidth ?? 1280
-        return (
-          <Grid
-            height={600}
-            defaultRowHeight={width < 800 ? 120 : 60}
-            defaultColumnWidth={width < 800 ? 120 : 60}
-            pinnedTopCount={1}
-            pinnedLeftCount={1}
-            data={data}
-          >
-            {CellItem}
-          </Grid>
-        )
-      }}
-    </BrowserOnly>
+    <Grid
+      height={600}
+      defaultRowHeight={60}
+      defaultColumnWidth={60}
+      pinnedTopCount={1}
+      pinnedLeftCount={1}
+      data={data}
+    >
+      {GridCell}
+    </Grid>
   )
 }
 ```
