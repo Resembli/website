@@ -28,6 +28,7 @@ const sidebars = {
         id: "react-virtualized-window/index",
       },
     },
+    "virtual-table/index",
   ],
 }
 

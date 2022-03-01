@@ -9,6 +9,7 @@ specifiers:
   '@docusaurus/theme-common': 2.0.0-beta.15
   '@mdx-js/react': ^1.6.21
   '@resembli/react-virtualized-window': ^0.8.2
+  '@resembli/virtual-table': ^0.0.3
   '@trivago/prettier-plugin-sort-imports': ^3.1.1
   '@tsconfig/docusaurus': ^1.0.4
   '@types/prettier': ^2.4.2
@@ -38,6 +39,7 @@ dependencies:
   '@docusaurus/theme-common': 2.0.0-beta.15_f1de533169a59eec95b0e062c7d92e81
   '@mdx-js/react': 1.6.22_react@17.0.2
   '@resembli/react-virtualized-window': 0.8.2_a0c521d4794c7ad97f5f4c1c4a7d5818
+  '@resembli/virtual-table': 0.0.3_a0c521d4794c7ad97f5f4c1c4a7d5818
   clsx: 1.1.1
   downshift: 6.1.7_react@17.0.2
   lorem-ipsum: 2.0.4
@@ -2524,6 +2526,19 @@ packages:
 
   /@resembli/react-virtualized-window/0.8.2_a0c521d4794c7ad97f5f4c1c4a7d5818:
     resolution: {integrity: sha512-2C95lrg3QbbJazp6qUY7/FpDKlYhwlKhztQgb5+ZB65QcsI+0r+Dx5ci3++72jyCODDmiZfcQtXOfL5ipDQhlg==}
+    peerDependencies:
+      '@types/react': ^16.8.6 || ^17.0.0
+      react: ^17.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+    dependencies:
+      '@types/react': 17.0.39
+      react: 17.0.2
+    dev: false
+
+  /@resembli/virtual-table/0.0.3_a0c521d4794c7ad97f5f4c1c4a7d5818:
+    resolution: {integrity: sha512-gkfD0Ikh3fnlxJY2AII0vkBII1+E6vMLR15X3g7NvDjH5lE+cc26I91Af4l9af/mF1LbePBX4u4STvFhd1mG4Q==}
     peerDependencies:
       '@types/react': ^16.8.6 || ^17.0.0
       react: ^17.0.0
