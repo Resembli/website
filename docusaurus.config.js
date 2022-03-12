@@ -23,6 +23,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          routeBasePath: "/",
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: "https://github.com/Resembli/website/edit/main/docs/",
         },
@@ -61,11 +62,6 @@ const config = {
           src: "resembli-icon.svg",
         },
         items: [
-          {
-            href: "/docs",
-            position: "left",
-            label: "Documentation",
-          },
           { to: "blog", label: "Blog", position: "left" },
           {
             href: "https://github.com/Resembli/ui",
