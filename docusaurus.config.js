@@ -6,9 +6,8 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula")
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Resembli UI",
-  tagline: "Build interactive, accessible, and data dense applications quickly",
-  url: "https://resembli.com",
+  title: "react-virtualized-window",
+  url: "https://react-virtualized-window.com",
   baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
@@ -51,12 +50,12 @@ const config = {
       announcementBar: {
         id: "Support Us",
         content:
-          'Want to support us? Consider giving us a &#9733 on <a target="_blank" rel="noopener noreferrer" href="https://github.com/Resembli/ui">Github</a>',
+          'Want to support us? Consider giving us a &#9733 on <a target="_blank" rel="noopener noreferrer" href="https://github.com/Resembli/react-virtualized-window">Github</a>',
         textColor: "#1eff00",
         backgroundColor: "#18191a",
       },
       navbar: {
-        title: "Resembli UI",
+        title: "React Virtualized Window",
         logo: {
           alt: "Resembli logo",
           src: "resembli-icon.svg",
@@ -64,7 +63,7 @@ const config = {
         items: [
           { to: "blog", label: "Blog", position: "left" },
           {
-            href: "https://github.com/Resembli/ui",
+            href: "https://github.com/Resembli/react-virtualized-window",
             label: "GitHub",
             position: "right",
           },

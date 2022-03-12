@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "description": "The Resembli UI website",
+  "description": "The react-virtualized-window website",
   "version": "0.0.0",
   "private": true,
   "scripts": {
