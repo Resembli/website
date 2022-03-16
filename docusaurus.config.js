@@ -50,7 +50,7 @@ const config = {
       announcementBar: {
         id: "Support Us",
         content:
-          'Want to support us? Consider giving us a &#9733 on <a target="_blank" rel="noopener noreferrer" href="https://github.com/Resembli/react-virtualized-window">Github</a>',
+          'Want to support us? Consider giving us a &#9733 on <a target="_blank" rel="noopener noreferrer" href="https://github.com/Resembli/react-virtualized-window">GitHub</a>',
         textColor: "#1eff00",
         backgroundColor: "#18191a",
       },
